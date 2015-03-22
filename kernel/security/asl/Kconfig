@@ -1,0 +1,9 @@
+config ASL
+	bool "ASL"
+	help
+	  This is ASL
+
+config ASL_DISABLED
+	bool "ASL_DISABLED"
+	help
+	  For disabling ASL
