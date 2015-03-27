@@ -22,7 +22,7 @@ if [ "$ENABLED" == "1" ]
 
        touch /dev/asl/root_hash
 
-       for FILE in `find /system -type f -o -type l`
+       for FILE in `find /system -type f -o -type l | sort -f`
        do
        SUM_STRING="$SUM_STRING\n$(sha1sum $FILE)"
        done

@@ -1,4 +1,3 @@
-#!/bin/sh
 OUT_DIR=$1
 
 SYSTEM_DIR=$1/system
@@ -19,7 +18,7 @@ touch $OUT_DIR/root_hash
 
 touch $OUT_DIR/files_count
 
-for FILE in `find $SYSTEM_DIR -type f -o -type l`
+for FILE in `find $SYSTEM_DIR -type f -o -type l | busybox sort -f`
 do
 echo $(sha1sum $FILE)
 SUM_STRING="$SUM_STRING\n$(sha1sum $FILE)"
