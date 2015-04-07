@@ -1,19 +1,33 @@
 #!/sbin/sh
 
+#общее время загрузки увеличивается на ~44c
 ENABLED=$(cat /proc/asl/enabled)
 
 sha1check() 
 {
-touch /dev/asl/asl_protocol
+cp /proc/asl/list /dev/asl/asl_list
 
 echo "$(sha1sum -c '/dev/asl/asl_list')" > /dev/asl/asl_protocol
 }
 
 proto_parse()
 {
-touch /dev/asl/detected
+cat /dev/asl/asl_protocol | grep "FAILED" | awk -F ":" '{print $1}' > /dev/asl/failed_detected
 
-cat /dev/asl/asl_protocol | grep "FAILED" > /dev/asl/detected
+#получение списка только модифицированных файлов
+cat /dev/asl/failed_detected | 
+(
+STR=""
+while read line
+do
+if [ -f "$line" ]
+ then
+  STR=$STR"\n"$line
+fi
+done
+echo -e $STR > /dev/asl/mod_detected
+sed -i '1d' /dev/asl/mod_detected
+)
 }
 
 recovery_mode()
@@ -21,9 +35,62 @@ recovery_mode()
 reboot recovery
 }
 
-check_status()
+make_file_list()
 {
-cat /dev/asl/detected | 
+echo "$(find /system -type f -o -type l | busybox sort -f)" > /dev/asl/file_list
+
+#протокол без статусов
+cat /dev/asl/asl_protocol | busybox sort -f | awk -F ":" '{print $1}' > /dev/asl/proto_no_stat
+}
+
+check_added_files()
+{
+ADDED=$(grep -F -v -f /dev/asl/proto_no_stat /dev/asl/file_list | sed 's/\/system/+\/system/')
+DELETED=$(grep -F -v -f /dev/asl/file_list /dev/asl/proto_no_stat | sed 's/\/system/-\/system/')
+DOA=$ADDED"\n"$DELETED
+echo -e "$DOA" > /dev/asl/doa_detected
+}
+
+check_count()
+{
+#оригинальное количество
+ORIG_COUNT=$(cat /proc/asl/files_count)
+
+#количество файлов на разделе в момент проверки
+CALC_COUNT_ON_SYSTEM=$(find /system -type f -o -type l | wc -l)
+
+#количество ненайденных файлов в протоколе = [ кол-во failed - кол-во модифицированных ]
+CALC_COUNT_IN_PROTO_NOT_EXIST=$[$(cat /dev/asl/failed_detected | wc -l)-$(cat /dev/asl/mod_detected | wc -l)]
+
+#количество найденных файлов в протоколе
+CALC_EXIST_IN_PROTO=$[$ORIG_COUNT-$CALC_COUNT_IN_PROTO_NOT_EXIST]
+
+#если количество подсчитанных файлов во время проверки не равняется кол-ву проверенных файлов кроме удаленных
+#то составляем опись всех файлов и сравниваем протокол и полученную опись для выявления добавленных файлов
+if [ $CALC_COUNT_ON_SYSTEM != $CALC_EXIST_IN_PROTO ]
+then
+make_file_list
+check_added_files
+fi
+}
+
+check_status() 
+{
+#проверка модифицированных файлов
+cat /dev/asl/mod_detected | 
+(while read line
+do
+if [ -n "$line" ]
+ then
+  echo '0' > /proc/asl/status
+  recovery_mode
+ else
+  echo '1' > /proc/asl/status
+fi
+done
+)
+#проверка на удаленные или добавленные файлы
+cat /dev/asl/doa_detected | 
 (while read line
 do
 if [ -n "$line" ]
@@ -39,12 +106,12 @@ done
 
 if [ "$ENABLED" == "1" ]
  then
-
-       cp /proc/asl/list /dev/asl/asl_list
        
        sha1check
 
        proto_parse
+
+       check_count
 
        check_status
 
