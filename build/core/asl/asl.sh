@@ -8,13 +8,13 @@ KERNEL_DIR=$2
 
 rm $OUT_DIR/asl_list
 
-rm $OUT_DIR/root_hash
+rm $OUT_DIR/archive_hash
 
 rm $OUT_DIR/files_count
 
 touch $OUT_DIR/asl_list
 
-touch $OUT_DIR/root_hash
+touch $OUT_DIR/archive_hash
 
 touch $OUT_DIR/files_count
 
@@ -26,9 +26,11 @@ done
 
 echo -e $SUM_STRING | sed '1d' > $OUT_DIR/asl_list
 
-echo '"'$(sha1sum $OUT_DIR/asl_list | cut -b 1-40)'"' > $OUT_DIR/root_hash
+zip -r -y -9 $OUT_DIR/system.zip $SYSTEM_DIR
 
-echo "ROOT HASH OF THE SYSTEM IS : "$(sha1sum $OUT_DIR/asl_list)
+echo '"'$(sha1sum $OUT_DIR/system.zip)'"' > $OUT_DIR/archive_hash
+
+echo "ROOT HASH OF THE RECOVERY ARCHIVE IS : "$(cat $OUT_DIR/archive_hash)
 
 CALC_COUNT_FILES=$(find $SYSTEM_DIR -type f | wc -l)
 
@@ -46,11 +48,11 @@ rm $KERNEL_OUT/arch/arm/boot/zImage
 
 rm $OUT_DIR/kernel
 
-rm $KERNEL_DIR/security/asl/root_hash
+rm $KERNEL_DIR/security/asl/archive_hash
 
 rm $KERNEL_DIR/security/asl/files_count
 
-cp $OUT_DIR/root_hash $KERNEL_DIR/security/asl/root_hash
+cp $OUT_DIR/archive_hash $KERNEL_DIR/security/asl/archive_hash
 
 cp $OUT_DIR/files_count $KERNEL_DIR/security/asl/files_count
 
