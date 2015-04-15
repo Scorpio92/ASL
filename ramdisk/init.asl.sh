@@ -1,6 +1,6 @@
 #!/sbin/sh
 
-#общее время загрузки увеличивается на ~44c
+#общее время загрузки увеличивается на ~40c
 ENABLED=$(cat /proc/asl/enabled)
 
 sha1check() 
@@ -22,7 +22,7 @@ while read line
 do
 if [ -f "$line" ]
  then
-  STR=$STR"\n"$line
+  STR=$STR"\n""* "$line
 fi
 done
 echo -e $STR > /dev/asl/mod_detected
@@ -32,21 +32,25 @@ sed -i '1d' /dev/asl/mod_detected
 
 recovery_mode()
 {
-reboot recovery
+NEED_RECOVERY=$(cat /dev/asl/need_recovery)
+if [ "$NEED_RECOVERY" == "1" ]
+then
+./init.recovery.asl.sh
+fi
 }
 
 make_file_list()
 {
-echo "$(find /system -type f -o -type l | busybox sort -f)" > /dev/asl/file_list
+echo "$(find /system -type f -o -type l | sort -f)" > /dev/asl/file_list
 
 #протокол без статусов
-cat /dev/asl/asl_protocol | busybox sort -f | awk -F ":" '{print $1}' > /dev/asl/proto_no_stat
+cat /dev/asl/asl_protocol | sort -f | awk -F ":" '{print $1}' > /dev/asl/proto_no_stat
 }
 
 check_added_files()
 {
-ADDED=$(grep -F -v -f /dev/asl/proto_no_stat /dev/asl/file_list | sed 's/\/system/+\/system/')
-DELETED=$(grep -F -v -f /dev/asl/file_list /dev/asl/proto_no_stat | sed 's/\/system/-\/system/')
+ADDED=$(grep -F -v -f /dev/asl/proto_no_stat /dev/asl/file_list | sed 's/\/system/+ \/system/')
+DELETED=$(grep -F -v -f /dev/asl/file_list /dev/asl/proto_no_stat | sed 's/\/system/- \/system/')
 DOA=$ADDED"\n"$DELETED
 echo -e "$DOA" > /dev/asl/doa_detected
 }
@@ -74,6 +78,18 @@ check_added_files
 fi
 }
 
+bad_status()
+{
+echo '0' > /proc/asl/status
+echo '1' > /dev/asl/need_recovery
+}
+
+good_status()
+{
+echo '1' > /proc/asl/status
+echo '0' > /dev/asl/need_recovery
+}
+
 check_status() 
 {
 #проверка модифицированных файлов
@@ -82,26 +98,30 @@ cat /dev/asl/mod_detected |
 do
 if [ -n "$line" ]
  then
-  echo '0' > /proc/asl/status
-  recovery_mode
+  bad_status
+  break
  else
-  echo '1' > /proc/asl/status
+  good_status
 fi
 done
 )
+NEED_RECOVERY=$(cat /dev/asl/need_recovery)
+if [ "$NEED_RECOVERY" != "1" ]
+then
 #проверка на удаленные или добавленные файлы
 cat /dev/asl/doa_detected | 
 (while read line
 do
 if [ -n "$line" ]
  then
-  echo '0' > /proc/asl/status
-  recovery_mode
+  bad_status
+  break
  else
-  echo '1' > /proc/asl/status
+  good_status
 fi
 done
 )
+fi
 }
 
 if [ "$ENABLED" == "1" ]
@@ -113,8 +133,11 @@ if [ "$ENABLED" == "1" ]
 
        check_count
 
+       echo '0' > /dev/asl/need_recovery
+
        check_status
 
  else
    echo '0' > /proc/asl/status
+   echo '0' > /dev/asl/need_recovery
 fi

@@ -1,5 +1,6 @@
 on fs
     mkdir dev/asl 0777 root root
     exec /sbin/busybox sh /init.asl.sh
+    exec /sbin/busybox sh /init.recovery.asl.sh
 
 
