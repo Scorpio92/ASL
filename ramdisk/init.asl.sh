@@ -49,8 +49,8 @@ cat /dev/asl/asl_protocol | sort -f | awk -F ":" '{print $1}' > /dev/asl/proto_n
 
 check_added_files()
 {
-ADDED=$(grep -F -v -f /dev/asl/proto_no_stat /dev/asl/file_list | sed 's/\/system/+ \/system/')
-DELETED=$(grep -F -v -f /dev/asl/file_list /dev/asl/proto_no_stat | sed 's/\/system/- \/system/')
+ADDED=$(grep -F -v -x -f /dev/asl/proto_no_stat /dev/asl/file_list | sed 's/\/system/+ \/system/')
+DELETED=$(grep -F -v -x -f /dev/asl/file_list /dev/asl/proto_no_stat | sed 's/\/system/- \/system/')
 DOA=$ADDED"\n"$DELETED
 echo -e "$DOA" > /dev/asl/doa_detected
 }
