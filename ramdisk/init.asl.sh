@@ -20,23 +20,18 @@ cat /dev/asl/failed_detected |
 STR=""
 while read line
 do
+
 if [ -f "$line" ]
  then
   STR=$STR"\n""* "$line
 fi
+
 done
+
 echo -e $STR > /dev/asl/mod_detected
+
 sed -i '1d' /dev/asl/mod_detected
 )
-}
-
-recovery_mode()
-{
-NEED_RECOVERY=$(cat /dev/asl/need_recovery)
-if [ "$NEED_RECOVERY" == "1" ]
-then
-./init.recovery.asl.sh
-fi
 }
 
 make_file_list()
@@ -50,8 +45,11 @@ cat /dev/asl/asl_protocol | sort -f | awk -F ":" '{print $1}' > /dev/asl/proto_n
 check_added_files()
 {
 ADDED=$(grep -F -v -x -f /dev/asl/proto_no_stat /dev/asl/file_list | sed 's/\/system/+ \/system/')
+
 DELETED=$(grep -F -v -x -f /dev/asl/file_list /dev/asl/proto_no_stat | sed 's/\/system/- \/system/')
+
 DOA=$ADDED"\n"$DELETED
+
 echo -e "$DOA" > /dev/asl/doa_detected
 }
 
@@ -73,7 +71,9 @@ CALC_EXIST_IN_PROTO=$[$ORIG_COUNT-$CALC_COUNT_IN_PROTO_NOT_EXIST]
 #то составляем опись всех файлов и сравниваем протокол и полученную опись для выявления добавленных файлов
 if [ $CALC_COUNT_ON_SYSTEM != $CALC_EXIST_IN_PROTO ]
 then
+
 make_file_list
+
 check_added_files
 fi
 }
@@ -81,12 +81,14 @@ fi
 bad_status()
 {
 echo '0' > /proc/asl/status
+
 echo '1' > /dev/asl/need_recovery
 }
 
 good_status()
 {
 echo '1' > /proc/asl/status
+
 echo '0' > /dev/asl/need_recovery
 }
 
@@ -96,48 +98,56 @@ check_status()
 cat /dev/asl/mod_detected | 
 (while read line
 do
+
 if [ -n "$line" ]
  then
+
   bad_status
+
   break
  else
   good_status
 fi
+
 done
 )
+
 NEED_RECOVERY=$(cat /dev/asl/need_recovery)
+
 if [ "$NEED_RECOVERY" != "1" ]
 then
 #проверка на удаленные или добавленные файлы
-cat /dev/asl/doa_detected | 
-(while read line
-do
-if [ -n "$line" ]
- then
-  bad_status
-  break
- else
+  cat /dev/asl/doa_detected | 
+  (while read line
+  do
+
+  if [ -n "$line" ]
+  then
+    bad_status
+    break
+  else
   good_status
-fi
+  fi
+
 done
 )
 fi
 }
 
 if [ "$ENABLED" == "1" ]
- then
+then
        
-       sha1check
+  sha1check
 
-       proto_parse
+  proto_parse
 
-       check_count
+  check_count
 
-       echo '0' > /dev/asl/need_recovery
+  echo '0' > /dev/asl/need_recovery
 
-       check_status
+  check_status
 
- else
-   echo '0' > /proc/asl/status
-   echo '0' > /dev/asl/need_recovery
+else
+  echo '0' > /proc/asl/status
+  echo '0' > /dev/asl/need_recovery
 fi
