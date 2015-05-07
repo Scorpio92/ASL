@@ -1,6 +1,11 @@
-on fs
+on early-init
     mkdir dev/asl 0777 root root
+    mkdir /mnt/tmpsd 0775 system system
+    symlink /mnt/tmpsd /tmpsd
+
+on fs
     exec /sbin/busybox sh /init.asl.sh
     exec /sbin/busybox sh /init.recovery.asl.sh
+
 
 
