@@ -19,7 +19,7 @@ NEED_RECOVERY=$(cat /dev/asl/need_recovery)
 
 ASL_IMAGE="/data/asl.img"
 
-SD_MOUNT_POINT="/mnt/tmpsd"
+SD_MOUNT_POINT="/tmpsd"
 
 ASL_MOUNT_POINT="/mnt/asl_img"
 
@@ -27,21 +27,21 @@ IMAGE_TYPE_FS="ext4"
 
 SYS_DIR="/system"
 
-ASL_LOOP="/dev/block/loop1"
-
-SD_LOOP="/dev/block/loop2"
-
 
 power_off()
 {
-umount $SD_MOUNT_POINT
+umount -l $SD_MOUNT_POINT
 
 reboot -p
+
 }
 
 mount_asl_img()
 {
 mkdir $ASL_MOUNT_POINT
+
+#free loop
+ASL_LOOP=$(losetup -f)
 
 losetup $ASL_LOOP $ASL_IMAGE
 
@@ -57,13 +57,18 @@ mount_sd()
 #1) adb shell mount, look 179:<number>
 #2) cat /proc/partitions, look string </dev/block> with <number>
 
+#mount parameters
 P1=$(cat /sdcard.conf | awk -F " " '{print $1}')
-
+#fs type
 P2=$(cat /sdcard.conf | awk -F " " '{print $2}')
+#block device
+P3=$(cat /sdcard.conf | awk -F " " '{print $3}')
 
-mkdir $SD_MOUNT_POINT
+#mkdir $SD_MOUNT_POINT
 
-mount -o loop=$SD_LOOP -t $P1 $P2 $SD_MOUNT_POINT
+#mount -o $P1,loop=$SD_LOOP -t $P2 $P3 $SD_MOUNT_POINT
+#mount -o $P1 -t $P2 $P3 $SD_MOUNT_POINT
+mount -t $P2 $P3 $SD_MOUNT_POINT
 
 #change path to the recovery imge
 ASL_IMAGE=$SD_MOUNT_POINT"/asl.img"
@@ -84,7 +89,7 @@ then
 
     check_doa_files
 
-    umount $ASL_MOUNT_POINT
+    umount -l $ASL_MOUNT_POINT
 
   else
     power_off
@@ -94,7 +99,7 @@ else
   power_off
 fi
 
-umount $SD_MOUNT_POINT
+umount -l $SD_MOUNT_POINT
 }
 
 check_asl_img()
@@ -115,7 +120,7 @@ then
 
     check_doa_files
 
-    umount $ASL_MOUNT_POINT
+    umount -l $ASL_MOUNT_POINT
 
   else
     mount_sd
@@ -140,7 +145,7 @@ then
 
   rm $SYS_DIR$P
 
-  cp $ASL_MOUNT_POINT$P $SYS_DIR$P
+  cp -d $ASL_MOUNT_POINT$P $SYS_DIR$P
 fi
 
 done
@@ -163,7 +168,13 @@ then
 
   if [ "$S" == "-" ]
   then
-    cp $ASL_MOUNT_POINT$P $SYS_DIR$P
+    #if directory not exist
+    DIR=$(dirname $P)
+    if [ ! -d "$DIR" ]; then
+      mkdir -p "$DIR"
+      chmod -R 755 $DIR
+    fi
+    cp -d $ASL_MOUNT_POINT$P $SYS_DIR$P
   fi
 
   if [ "$S" == "+" ]
