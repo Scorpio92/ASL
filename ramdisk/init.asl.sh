@@ -4,9 +4,11 @@ ENABLED=""
 
 TERM="/dev/tty0"
 
-N="\n\n\n\n\n"
+N="\n\n\n\n"
 
-SLEEP_TIME="1s"
+SLEEP_TIME="2s"
+
+PERMISSIONS="0444"
 
 
 init()
@@ -25,7 +27,7 @@ then
  
   echo -e $N"A N D R O I D   S E C U R I T Y   L I S T   v"$VERSION > $TERM
 
-  echo -e "\n\nA U T H O R   I S   S C O R P I O 9 2" > $TERM
+  echo -e "\n\nA U T H O R :   S C O R P I O 9 2" > $TERM
 
   sleep 3s
 
@@ -42,6 +44,8 @@ then
   echo '0' > /dev/asl/need_recovery
 
   check_status
+
+  chmod $PERMISSIONS /dev/asl/*
 
 else
   echo '0' > /proc/asl/status
@@ -184,10 +188,6 @@ bad_status()
 echo '0' > /proc/asl/status
 
 echo '1' > /dev/asl/need_recovery
-
-echo -e $N"S T A R T   R E C O V E R Y   M O D E . . ." > $TERM
-
-sleep $SLEEP_TIME
 }
 
 good_status()
@@ -206,7 +206,6 @@ do
 
 if [ -n "$line" ]
  then
-
   bad_status
 
   break
@@ -229,18 +228,25 @@ then
   if [ -n "$line" ]
   then
     bad_status
+
     break
   else
-  good_status
-
-  echo -e $N"B O O T I N G   C O N T I N U E . . ." > $TERM
-
-  sleep $SLEEP_TIME
+    good_status
   fi
 
 done
 )
 fi
+
+FINAL_STATUS=$(cat /dev/asl/need_recovery)
+
+if [ "$NEED_RECOVERY" = "0" ]
+then
+  echo -e $N"B O O T I N G   C O N T I N U E . . ." > $TERM
+else
+  echo -e $N"S T A R T   R E C O V E R Y   M O D E . . ." > $TERM
+fi
+sleep $SLEEP_TIME
 }
 
 init

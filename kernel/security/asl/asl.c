@@ -10,7 +10,7 @@
 #else
 #define ENABLED_FLAG "1"
 #endif
-#define ASL_version "1.1"
+#define ASL_version "1.2"
 #define MAX_PROC_SIZE 4 //размер буфера для записи статуса
 //#define MAX_PROC_LIST_SIZE 100 //размер буфера для записи
 
@@ -22,8 +22,8 @@ static char files_count[] = {
 #include "files_count"
 };
 
-static char archive_hash[] = {
-#include "archive_hash"
+static char asl_img_hash[] = {
+#include "asl_img_hash"
 };
 
 static char proc_data[MAX_PROC_SIZE];
@@ -33,7 +33,7 @@ static struct proc_dir_entry *enabled_file; //вкл/откл механизма
 static struct proc_dir_entry *status_file; //переменная для статуса
 static struct proc_dir_entry *version_file; //переменная для версии
 static struct proc_dir_entry *list_file; //переменная для списка хеш сумм
-static struct proc_dir_entry *archive_hash_file; //переменная для хеш суммы архива восстановления
+static struct proc_dir_entry *asl_img_hash_file; //переменная для хеш суммы архива восстановления
 static struct proc_dir_entry *files_count_file; //переменная для количества файлов
 
 int read_enabled_flag(char *buf,char **start,off_t offset,int count,int *eof,void *data )
@@ -50,10 +50,10 @@ len = sprintf(buf,files_count);
 return len;
 }
 
-int read_archive_hash(char *buf,char **start,off_t offset,int count,int *eof,void *data )
+int read_asl_img_hash(char *buf,char **start,off_t offset,int count,int *eof,void *data )
 {
 int len=0;
-len = sprintf(buf,archive_hash);
+len = sprintf(buf,asl_img_hash);
 return len;
 }
 
@@ -67,7 +67,7 @@ return len;
 int read_proc(char *buf,char **start,off_t offset,int count,int *eof,void *data )
 {
 int len=0;
-len = sprintf(buf,"\n %s\n ",proc_data);
+len = sprintf(buf,"%s",proc_data);
 return len;
 }
 
@@ -140,7 +140,7 @@ static struct file_operations my_file_ops = {
 };
 //*****************************************list end****************************
 
-void create_new_proc_entry()
+void create_asl_proc_entry()
 {
 asl_dir = proc_mkdir(ASL_ENTRY,NULL);
 if(!asl_dir){
@@ -148,28 +148,23 @@ if(!asl_dir){
     return -ENOMEM;
 }
 enabled_file = create_proc_read_entry("enabled", 0444, asl_dir, read_enabled_flag, NULL);
-files_count_file = create_proc_read_entry("files_count", 0444, asl_dir, read_files_count, NULL);
-archive_hash_file = create_proc_read_entry("archive_hash", 0444, asl_dir, read_archive_hash, NULL);
+files_count_file = create_proc_read_entry("files_count", 0400, asl_dir, read_files_count, NULL);
+asl_img_hash_file = create_proc_read_entry("asl_img_hash", 0444, asl_dir, read_asl_img_hash, NULL);
 //****************************************list start*****************************
-list_file = create_proc_entry("list", 0444, asl_dir);
+list_file = create_proc_entry("list", 0400, asl_dir);
 if (list_file) {
     list_file->proc_fops = &my_file_ops;
 }
 //****************************************list end*******************************
 version_file = create_proc_read_entry("version", 0444, asl_dir, read_ver, NULL);
-status_file = create_proc_entry("status", 0666, asl_dir);
-if(!status_file){
-    printk(KERN_INFO "Error creating asl proc entry");
-    return -ENOMEM;
-}
+status_file = create_proc_entry("status", 0644, asl_dir);
 status_file->read_proc = read_proc;
 status_file->write_proc = write_proc;
 printk(KERN_INFO "asl proc initialized");
-
 }
 
 int asl_init (void) {
-    create_new_proc_entry();
+    create_asl_proc_entry();
     return 0;
 }
 

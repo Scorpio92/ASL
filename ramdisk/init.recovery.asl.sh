@@ -31,14 +31,14 @@ TERM="/dev/tty0"
 
 N="\n\n\n\n\n"
 
-SLEEP_TIME="1s"
+SLEEP_TIME="2s"
 
 
 power_off()
 {
 umount -l $SD_MOUNT_POINT
 
-reboot -p
+poweroff
 
 }
 
@@ -48,8 +48,6 @@ echo -e $N"M O U N T I N G   R E C O V E R Y   I M A G E . . ." > $TERM
 
 sleep $SLEEP_TIME
 
-#mkdir $ASL_MOUNT_POINT
-
 #free loop
 ASL_LOOP=$(losetup -f)
 
@@ -57,8 +55,6 @@ losetup $ASL_LOOP $ASL_IMAGE
 
 #mount img only in RO for save hash sum!
 mount -o ro -t $IMAGE_TYPE_FS $ASL_LOOP $ASL_MOUNT_POINT
-
-#mount -o loop=/dev/block/loop1 -t $IMAGE_TYPE_FS $ASL_IMAGE $ASL_MOUNT_POINT
 }
 
 mount_sd()
@@ -73,10 +69,6 @@ P1=$(cat /sdcard.conf | awk -F " " '{print $1}')
 P2=$(cat /sdcard.conf | awk -F " " '{print $2}')
 #block device
 P3=$(cat /sdcard.conf | awk -F " " '{print $3}')
-
-#mkdir $SD_MOUNT_POINT
-#mount -o $P1,loop=$SD_LOOP -t $P2 $P3 $SD_MOUNT_POINT
-#mount -o $P1 -t $P2 $P3 $SD_MOUNT_POINT
 
 echo -e $N"M O U N T I N G   S D   C A R D . . ." > $TERM
 
