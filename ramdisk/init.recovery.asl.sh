@@ -21,11 +21,17 @@ ASL_IMAGE="/data/asl.img"
 
 SD_MOUNT_POINT="/tmpsd"
 
-ASL_MOUNT_POINT="/mnt/asl_img"
+ASL_MOUNT_POINT="/asl_img"
 
 IMAGE_TYPE_FS="ext4"
 
 SYS_DIR="/system"
+
+TERM="/dev/tty0"
+
+N="\n\n\n\n\n"
+
+SLEEP_TIME="1s"
 
 
 power_off()
@@ -38,7 +44,11 @@ reboot -p
 
 mount_asl_img()
 {
-mkdir $ASL_MOUNT_POINT
+echo -e $N"M O U N T I N G   R E C O V E R Y   I M A G E . . ." > $TERM
+
+sleep $SLEEP_TIME
+
+#mkdir $ASL_MOUNT_POINT
 
 #free loop
 ASL_LOOP=$(losetup -f)
@@ -65,18 +75,30 @@ P2=$(cat /sdcard.conf | awk -F " " '{print $2}')
 P3=$(cat /sdcard.conf | awk -F " " '{print $3}')
 
 #mkdir $SD_MOUNT_POINT
-
 #mount -o $P1,loop=$SD_LOOP -t $P2 $P3 $SD_MOUNT_POINT
 #mount -o $P1 -t $P2 $P3 $SD_MOUNT_POINT
+
+echo -e $N"M O U N T I N G   S D   C A R D . . ." > $TERM
+
+sleep $SLEEP_TIME
+
 mount -t $P2 $P3 $SD_MOUNT_POINT
 
 #change path to the recovery imge
 ASL_IMAGE=$SD_MOUNT_POINT"/asl.img"
 
+echo -e $N"F I N D I N G   R E C O V E R Y   I M A G E   O N   S D   C A R D . . ." > $TERM
+
+sleep $SLEEP_TIME
+
 if [ -f $ASL_IMAGE ]
 then
 
   ORIG_SUM=$(cat /proc/asl/asl_img_hash)
+
+  echo -e $N"C H E C K I N G   R E C O V E R Y   I M A G E   S H A - 1   S U M . . ." > $TERM
+
+  sleep $SLEEP_TIME
 
   CALC_SUM=$(sha1sum $ASL_IMAGE | awk -F "  " '{print $1}')
 
@@ -92,10 +114,18 @@ then
     umount -l $ASL_MOUNT_POINT
 
   else
+    echo -e $N"R E C O V E R Y   I M A G E   S H A - 1   S U M   F A I L E D   ! ! !" > $TERM
+
+    sleep $SLEEP_TIME
+
     power_off
   fi
 
 else
+  echo -e $N"R E C O V E R Y   I M A G E   N O T   F O U N D   O N   S D   C A R D   ! ! !" > $TERM
+
+  sleep $SLEEP_TIME
+
   power_off
 fi
 
@@ -104,10 +134,18 @@ umount -l $SD_MOUNT_POINT
 
 check_asl_img()
 {
+echo -e $N"F I N D I N G   R E C O V E R Y   I M A G E   I N   /D A T A . . ." > $TERM
+
+sleep $SLEEP_TIME
+
 if [ -f $ASL_IMAGE ]
 then
 
   ORIG_SUM=$(cat /proc/asl/asl_img_hash)
+
+  echo -e $N"C H E C K I N G   R E C O V E R Y   I M A G E   S H A - 1   S U M . . ." > $TERM
+
+  sleep $SLEEP_TIME
 
   CALC_SUM=$(sha1sum $ASL_IMAGE | awk -F "  " '{print $1}')
 
@@ -123,16 +161,28 @@ then
     umount -l $ASL_MOUNT_POINT
 
   else
+    echo -e $N"R E C O V E R Y   I M A G E   S H A - 1   S U M   F A I L E D   ! ! !" > $TERM
+
+    sleep $SLEEP_TIME
+
     mount_sd
   fi
 
 else
-mount_sd
+  echo -e $N"R E C O V E R Y   I M A G E   N O T   F O U N D   I N   D A T A   ! ! !" > $TERM
+
+  sleep $SLEEP_TIME
+
+  mount_sd
 fi
 }
 
 recovery_modify()
 {
+echo -e $N"R E C O V E R Y   M O D I F I E D   F I L E S . . ." > $TERM
+
+sleep $SLEEP_TIME
+
 cat /dev/asl/mod_detected | 
 (
 while read line
@@ -150,10 +200,18 @@ fi
 
 done
 )
+
+echo -e $N"C O M P L E T E D" > $TERM
+
+sleep $SLEEP_TIME
 }
 
 recovery_doa()
 {
+echo -e $N"R E C O V E R Y   D E L E T E D   A N D   A D D E D   F I L E S . . ." > $TERM
+
+sleep $SLEEP_TIME
+
 cat /dev/asl/doa_detected | 
 (
 while read line
@@ -166,12 +224,16 @@ then
 
   P=$(echo $line | awk -F " /system" '{ print $2}')
 
-  if [ "$S" == "-" ]
+   if [ "$S" == "-" ]
   then
     #if directory not exist
-    DIR=$(dirname $P)
-    if [ ! -d "$DIR" ]; then
+    DIR=$(dirname $SYS_DIR$P)
+
+    if [ ! -d "$DIR" ]
+    then
+
       mkdir -p "$DIR"
+
       chmod -R 755 $DIR
     fi
     cp -d $ASL_MOUNT_POINT$P $SYS_DIR$P
@@ -185,6 +247,9 @@ then
 fi
 done
 )
+echo -e $N"C O M P L E T E D" > $TERM
+
+sleep $SLEEP_TIME
 }
 
 check_mod_files()
@@ -228,7 +293,19 @@ done
 if [ "$NEED_RECOVERY" == "1" ]
 then
 
+  echo -e $N"R E C O V E R Y   M O D E   I N I T E D" > $TERM
+
+  sleep $SLEEP_TIME
+
   check_asl_img
+
+  echo -e $N"R E C O V E R Y   C O M P L E T E D   ! ! !" > $TERM
+
+  sleep $SLEEP_TIME
+
+  echo -e $N"B O O T I N G   C O N T I N U E . . ." > $TERM
+
+  sleep $SLEEP_TIME
 
 fi
 
