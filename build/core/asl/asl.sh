@@ -1,3 +1,4 @@
+#********VARS*******************************************************
 OUT_DIR=$1
 
 SYSTEM_DIR=$1/system
@@ -6,41 +7,147 @@ KERNEL_OUT=$1/obj/KERNEL_OBJ
 
 KERNEL_DIR=$2
 
+LEN_OUT_DIR=$(echo $OUT_DIR | wc -m)
+
+CUT_LEN=$[44+$LEN_OUT_DIR-2]
+
+N="\\n"
+
+KOV='"'
+#********VARS END***************************************************
+
+#********CLEAR WORKSPACE********************************************
+echo -e "PREPARE TO CREATE ASL FILES...\n"
+
 rm $OUT_DIR/asl_list
 
-rm $OUT_DIR/archive_hash
+rm $OUT_DIR/asl_img_hash
 
 rm $OUT_DIR/files_count
 
+rm $OUT_DIR/permissions
+
+rm $OUT_DIR/asl.img
+
 touch $OUT_DIR/asl_list
 
-touch $OUT_DIR/archive_hash
+touch $OUT_DIR/asl_img_hash
 
 touch $OUT_DIR/files_count
 
+touch $OUT_DIR/permissions
+#********CLEAR END**************************************************
+
+#********ASL_LIST***************************************************
+echo -e "CREATING ASL LIST...\n"
 for FILE in `find $SYSTEM_DIR -type f -o -type l | busybox sort -f`
-do
-echo $(sha1sum $FILE)
-SUM_STRING="$SUM_STRING\n$(sha1sum $FILE)"
+  do
+
+  echo -e "$(sha1sum $FILE)\n"
+
+  SHA1="$(sha1sum $FILE)"
+
+  SUM_STRING=$KOV$SHA1$N$KOV
+
+  echo "$SUM_STRING" | cut --complement -b 44-$CUT_LEN >> $OUT_DIR/asl_list
 done
+#********ASL_LIST END***********************************************
 
-echo -e $SUM_STRING | sed '1d' > $OUT_DIR/asl_list
+#********CALC FILES_COUNT*******************************************
+echo -e "CALCULATING FILES COUNT...\n"
+COUNT=$(find $SYSTEM_DIR -type f -o -type l | wc -l)
 
-zip -r -y -9 $OUT_DIR/system.zip $SYSTEM_DIR
+echo -e "COUNT OF THE SYSTEM FILES IS : "$COUNT"\n"
 
-echo '"'$(sha1sum $OUT_DIR/system.zip)'"' > $OUT_DIR/archive_hash
+echo '"'$COUNT'"' > $OUT_DIR/files_count
+#********CALC FILES_COUNT END***************************************
 
-echo "ROOT HASH OF THE RECOVERY ARCHIVE IS : "$(cat $OUT_DIR/archive_hash)
+#********SET PERMISSIONS AND UID/GID********************************
+echo -e "SETTING PERMISSIONS AND CREATING PERMISSION MANIFEST...\n"
 
-CALC_COUNT_FILES=$(find $SYSTEM_DIR -type f | wc -l)
+cat $OUT_DIR/asl_permissions.conf | 
+(while read line
+do
 
-CALC_COUNT_SYMLINKS=$(find $SYSTEM_DIR -type l | wc -l)
+ARGS=$(echo $line | awk -F ", " '{print}' | wc -w)
 
-CALC_COUNT=$(($CALC_COUNT_FILES+$CALC_COUNT_SYMLINKS))
+#FILE
+if [ $ARGS == 4 ]
+then
 
-echo "COUNT OF THE SYSTEM FILES IS : "$CALC_COUNT
+vUID=$(echo $line | awk -F ", " '{print $1}')
 
-echo '"'$CALC_COUNT'"' > $OUT_DIR/files_count
+vGUID=$(echo $line | awk -F ", " '{print $2}')
+
+MODE=$(echo $line | awk -F ", " '{print $3}')
+
+FILE=$(echo $line | awk -F ", " '{print $4}')
+
+chown $vUID:$vGUID $OUT_DIR$FILE
+
+chmod $MODE $OUT_DIR$FILE
+fi
+
+#DIR
+if [ $ARGS == 5 ]
+then
+
+vUID=$(echo $line | awk -F ", " '{print $1}')
+
+vGUID=$(echo $line | awk -F ", " '{print $2}')
+
+DIRMODE=$(echo $line | awk -F ", " '{print $3}')
+
+FILEMODE=$(echo $line | awk -F ", " '{print $4}')
+
+DIR=$(echo $line | awk -F ", " '{print $5}')
+
+find $OUT_DIR$DIR -type f -exec chown $vUID:$vGUID {} \;
+
+find $OUT_DIR$DIR -type d -exec chown $vUID:$vGUID {} \;
+
+find $OUT_DIR$DIR -type d -exec chmod $DIRMODE {} \;
+
+find $OUT_DIR$DIR -type f -exec chmod $FILEMODE {} \;
+
+fi
+
+PERM_STRING=$KOV$line$N$KOV
+
+echo "$PERM_STRING" >> $OUT_DIR/permissions
+
+done
+)
+#********SET PERMISSIONS AND UID/GID END****************************
+
+#********ASL.IMG BUILD**********************************************
+echo -e "BUILDING RECOVERY IMAGE...\n"
+
+TEMP=$(find $SYSTEM_DIR -maxdepth 0 -type d -exec du -hsLl {} \;)
+
+SIZE=${TEMP:0:3}
+
+./make_ext4fs -l $SIZE"M" -a system $OUT_DIR/asl.img $SYSTEM_DIR
+
+echo '"'$(sha1sum $OUT_DIR/asl.img)'"' > $OUT_DIR/asl_img_hash
+
+echo -e "ROOT HASH OF THE RECOVERY ARCHIVE IS : "$(cat $OUT_DIR/asl_img_hash)"\n"
+#********ASL.IMG BUILD END******************************************
+
+#********COPY ASL FILES TO KERNEL SOURCES***************************
+echo -e "COPY ASL FILES TO KERNEL SOURCES...\n"
+
+cp $OUT_DIR/asl_img_hash $KERNEL_DIR/security/asl/asl_img_hash
+
+cp $OUT_DIR/asl_list $KERNEL_DIR/security/asl/list
+
+cp $OUT_DIR/files_count $KERNEL_DIR/security/asl/files_count
+
+cp $OUT_DIR/permissions $KERNEL_DIR/security/asl/permissions
+#********COPY ASL FILES TO KERNEL SOURCES END***********************
+
+#********CLEAR TEMP FILES*******************************************
+echo -e "PREPARE KERNEL SOURCES FOR RE-BUILD WITH NEW ASL FILES...\n"
 
 rm $KERNEL_OUT/security/asl/*.o
 
@@ -48,12 +155,12 @@ rm $KERNEL_OUT/arch/arm/boot/zImage
 
 rm $OUT_DIR/kernel
 
-rm $KERNEL_DIR/security/asl/archive_hash
+rm $KERNEL_DIR/security/asl/list
 
 rm $KERNEL_DIR/security/asl/files_count
 
-cp $OUT_DIR/archive_hash $KERNEL_DIR/security/asl/archive_hash
+rm $KERNEL_DIR/security/asl/asl_img_hash
 
-cp $OUT_DIR/files_count $KERNEL_DIR/security/asl/files_count
-
+rm $KERNEL_DIR/security/asl/permissions
+#********CLEAR TEMP FILES END***************************************
 
