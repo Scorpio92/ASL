@@ -34,6 +34,112 @@ N="\n\n\n\n\n"
 SLEEP_TIME="2s"
 
 
+fix_permissions()
+{
+echo -e $N"F I X   P E R M I S S I O N S . . ." > $TERM
+
+cp /proc/asl/permissions /dev/asl/permissions
+
+cat /dev/asl/permissions | 
+(while read line
+do
+
+if [ -n "$line" ]
+then
+
+  ARGS=$(echo $line | awk -F ", " '{print}' | wc -w)
+
+  #FILE
+  if [ $ARGS == 4 ]
+  then
+
+    vUID=$(echo $line | awk -F ", " '{print $1}')
+
+    vGUID=$(echo $line | awk -F ", " '{print $2}')
+
+    MODE=$(echo $line | awk -F ", " '{print $3}')
+
+    FILE=$(echo $line | awk -F ", " '{print $4}')
+
+    chown $vUID:$vGUID $FILE
+
+    chmod $MODE $FILE
+  fi
+
+  #DIR
+  if [ $ARGS == 5 ]
+  then
+
+    vUID=$(echo $line | awk -F ", " '{print $1}')
+
+    vGUID=$(echo $line | awk -F ", " '{print $2}')
+
+    DIRMODE=$(echo $line | awk -F ", " '{print $3}')
+
+    FILEMODE=$(echo $line | awk -F ", " '{print $4}')
+
+    DIR=$(echo $line | awk -F ", " '{print $5}')
+
+
+    echo -e "$(find $line -type d)" > /dev/asl/d
+
+    cat /dev/asl/d | 
+    (while read line_d
+    do
+
+    chown $vUID:$vGUID $line_d
+
+    chmod $DIRMODE $line_d
+
+    done
+    )
+
+    echo -e "$(find $line -type f)" > /dev/asl/f
+    cat /dev/asl/f | 
+    (while read line_f
+    do
+
+    chown $vUID:$vGUID $line_f
+
+    chmod $FILEMODE $line_f
+
+    done
+    )
+
+  fi
+fi
+done
+)
+
+echo -e $N"C O M P L E T E D" > $TERM
+
+sleep $SLEEP_TIME
+}
+
+init()
+{
+if [ "$NEED_RECOVERY" == "1" ]
+then
+
+  echo -e $N"S T A R T   R E C O V E R Y   M O D E . . ." > $TERM
+
+  sleep $SLEEP_TIME
+
+  check_asl_img
+
+  echo -e $N"R E C O V E R Y   C O M P L E T E D   ! ! !" > $TERM
+
+  sleep $SLEEP_TIME
+fi
+
+#force permissions fix
+fix_permissions
+
+echo -e $N"B O O T I N G   C O N T I N U E . . ." > $TERM
+
+sleep $SLEEP_TIME
+}
+
 power_off()
 {
 umount -l $SD_MOUNT_POINT
@@ -226,7 +332,6 @@ then
 
       mkdir -p "$DIR"
 
-      chmod -R 755 $DIR
     fi
     cp -d $ASL_MOUNT_POINT$P $SYS_DIR$P
   fi
@@ -282,22 +387,5 @@ done
 )
 }
 
-if [ "$NEED_RECOVERY" == "1" ]
-then
-
-  echo -e $N"R E C O V E R Y   M O D E   I N I T E D" > $TERM
-
-  sleep $SLEEP_TIME
-
-  check_asl_img
-
-  echo -e $N"R E C O V E R Y   C O M P L E T E D   ! ! !" > $TERM
-
-  sleep $SLEEP_TIME
-
-  echo -e $N"B O O T I N G   C O N T I N U E . . ." > $TERM
-
-  sleep $SLEEP_TIME
-
-fi
+init
 

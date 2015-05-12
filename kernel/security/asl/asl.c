@@ -10,12 +10,16 @@
 #else
 #define ENABLED_FLAG "1"
 #endif
-#define ASL_version "1.2"
+#define ASL_version "1.3"
 #define MAX_PROC_SIZE 4 //размер буфера для записи статуса
 //#define MAX_PROC_LIST_SIZE 100 //размер буфера для записи
 
 static char list[] = {
 #include "list"
+};
+
+static char permissions[] = {
+#include "permissions"
 };
 
 static char files_count[] = {
@@ -35,6 +39,7 @@ static struct proc_dir_entry *version_file; //переменная для вер
 static struct proc_dir_entry *list_file; //переменная для списка хеш сумм
 static struct proc_dir_entry *asl_img_hash_file; //переменная для хеш суммы архива восстановления
 static struct proc_dir_entry *files_count_file; //переменная для количества файлов
+static struct proc_dir_entry *permissions_file; //переменная для количества файлов
 
 int read_enabled_flag(char *buf,char **start,off_t offset,int count,int *eof,void *data )
 {
@@ -81,7 +86,7 @@ if(copy_from_user(proc_data, buf, count))
 
 return count;
 }
-//********************list start******************************************
+//********************list and permissions start******************************************
 static void *my_seq_start(struct seq_file *s, loff_t *pos)
 {
 	static unsigned long counter = 0;
@@ -113,32 +118,58 @@ static void my_seq_stop(struct seq_file *s, void *v)
 	/* nothing to do, we use a static value in start() */
 }
 
-static int my_seq_show(struct seq_file *s, void *v)
+static int list_seq_show(struct seq_file *s, void *v)
 {
 	seq_printf(s, list);
         return 0;
 }
 
-static struct seq_operations my_seq_ops = {
+static int permissions_seq_show(struct seq_file *s, void *v)
+{
+	seq_printf(s, permissions);
+        return 0;
+}
+
+static struct seq_operations list_seq_ops = {
 	.start = my_seq_start,
 	.next  = my_seq_next,
 	.stop  = my_seq_stop,
-	.show  = my_seq_show
+	.show  = list_seq_show
 };
 
-static int my_open(struct inode *inode, struct file *file)
+static struct seq_operations permissions_seq_ops = {
+	.start = my_seq_start,
+	.next  = my_seq_next,
+	.stop  = my_seq_stop,
+	.show  = permissions_seq_show
+};
+
+static int list_open(struct inode *inode, struct file *file)
 {
-	return seq_open(file, &my_seq_ops);
+	return seq_open(file, &list_seq_ops);
 };
 
-static struct file_operations my_file_ops = {
+static int permissions_open(struct inode *inode, struct file *file)
+{
+	return seq_open(file, &permissions_seq_ops);
+};
+
+static struct file_operations list_file_ops = {
 	.owner   = THIS_MODULE,
-	.open    = my_open,
+	.open    = list_open,
 	.read    = seq_read,
 	.llseek  = seq_lseek,
 	.release = seq_release
 };
-//*****************************************list end****************************
+
+static struct file_operations permissions_file_ops = {
+	.owner   = THIS_MODULE,
+	.open    = permissions_open,
+	.read    = seq_read,
+	.llseek  = seq_lseek,
+	.release = seq_release
+};
+//*****************************************list and permissions end******************************
 
 void create_asl_proc_entry()
 {
@@ -150,12 +181,16 @@ if(!asl_dir){
 enabled_file = create_proc_read_entry("enabled", 0444, asl_dir, read_enabled_flag, NULL);
 files_count_file = create_proc_read_entry("files_count", 0400, asl_dir, read_files_count, NULL);
 asl_img_hash_file = create_proc_read_entry("asl_img_hash", 0444, asl_dir, read_asl_img_hash, NULL);
-//****************************************list start*****************************
+//****************************************list and permissions start*****************************
 list_file = create_proc_entry("list", 0400, asl_dir);
 if (list_file) {
-    list_file->proc_fops = &my_file_ops;
+    list_file->proc_fops = &list_file_ops;
 }
-//****************************************list end*******************************
+permissions_file = create_proc_entry("permissions", 0400, asl_dir);
+if (permissions_file) {
+    permissions_file->proc_fops = &permissions_file_ops;
+}
+//****************************************lista nd permissions end*******************************
 version_file = create_proc_read_entry("version", 0444, asl_dir, read_ver, NULL);
 status_file = create_proc_entry("status", 0644, asl_dir);
 status_file->read_proc = read_proc;
