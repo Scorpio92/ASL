@@ -1,8 +1,8 @@
 on early-init
     mkdir dev/asl 0444 root root
-    mkdir /mnt/tmpsd 0444 system system
+    mkdir /mnt/tmpsd 0444 root root
     symlink /mnt/tmpsd /tmpsd
-    mkdir /mnt/asl_img 0444 system system
+    mkdir /mnt/asl_img 0444 root root
     symlink /mnt/asl_img /asl_img
 
 on fs
