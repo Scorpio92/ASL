@@ -237,16 +237,6 @@ then
 done
 )
 fi
-
-FINAL_STATUS=$(cat /dev/asl/need_recovery)
-
-if [ "$NEED_RECOVERY" = "0" ]
-then
-  echo -e $N"B O O T I N G   C O N T I N U E . . ." > $TERM
-else
-  echo -e $N"S T A R T   R E C O V E R Y   M O D E . . ." > $TERM
-fi
-sleep $SLEEP_TIME
 }
 
 init
