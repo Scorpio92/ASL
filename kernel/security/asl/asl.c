@@ -186,7 +186,7 @@ list_file = create_proc_entry("list", 0400, asl_dir);
 if (list_file) {
     list_file->proc_fops = &list_file_ops;
 }
-permissions_file = create_proc_entry("permissions", 0400, asl_dir);
+permissions_file = create_proc_entry("permissions", 0444, asl_dir);
 if (permissions_file) {
     permissions_file->proc_fops = &permissions_file_ops;
 }

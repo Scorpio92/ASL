@@ -33,6 +33,8 @@ N="\n\n\n\n\n"
 
 SLEEP_TIME="2s"
 
+PERMISSIONS="0444"
+
 
 fix_permissions()
 {
@@ -134,6 +136,8 @@ fi
 
 #force permissions fix
 fix_permissions
+
+chmod $PERMISSIONS /dev/asl/*
 
 echo -e $N"B O O T I N G   C O N T I N U E . . ." > $TERM
 

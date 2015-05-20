@@ -8,8 +8,6 @@ N="\n\n\n\n"
 
 SLEEP_TIME="2s"
 
-PERMISSIONS="0444"
-
 
 init()
 {
@@ -44,8 +42,6 @@ then
   echo '0' > /dev/asl/need_recovery
 
   check_status
-
-  chmod $PERMISSIONS /dev/asl/*
 
 else
   echo '0' > /proc/asl/status
