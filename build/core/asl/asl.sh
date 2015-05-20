@@ -121,7 +121,7 @@ done
 #********SET PERMISSIONS AND UID/GID END****************************
 
 #********ASL.IMG BUILD**********************************************
-echo -e "BUILDING RECOVERY IMAGE...\n"
+echo -e "BUILDING ASL RECOVERY IMAGE...\n"
 
 TEMP=$(find $SYSTEM_DIR -maxdepth 0 -type d -exec du -hsLl {} \;)
 
@@ -129,10 +129,30 @@ SIZE=${TEMP:0:3}
 
 ./make_ext4fs -l $SIZE"M" -a system $OUT_DIR/asl.img $SYSTEM_DIR
 
-echo '"'$(sha1sum $OUT_DIR/asl.img)'"' > $OUT_DIR/asl_img_hash
+TEMP=$(echo "$(sha1sum $OUT_DIR/asl.img)" | awk -F " " '{print $1}')
 
-echo -e "ROOT HASH OF THE RECOVERY ARCHIVE IS : "$(cat $OUT_DIR/asl_img_hash)"\n"
+echo '"'$TEMP'"' > $OUT_DIR/asl_img_hash
+
+echo -e "ROOT HASH OF THE ASL.IMG IS : "$(cat $OUT_DIR/asl_img_hash)"\n"
 #********ASL.IMG BUILD END******************************************
+
+#********CLEAR TEMP KERNEL FILES************************************
+echo -e "PREPARE KERNEL SOURCES FOR RE-BUILD WITH NEW ASL FILES...\n"
+
+rm $OUT_DIR/kernel
+
+rm $KERNEL_OUT/security/asl/*.o
+
+rm $KERNEL_OUT/arch/arm/boot/zImage
+
+rm $KERNEL_DIR/security/asl/list
+
+rm $KERNEL_DIR/security/asl/files_count
+
+rm $KERNEL_DIR/security/asl/asl_img_hash
+
+rm $KERNEL_DIR/security/asl/permissions
+#********CLEAR TEMP KERNEL FILES END********************************
 
 #********COPY ASL FILES TO KERNEL SOURCES***************************
 echo -e "COPY ASL FILES TO KERNEL SOURCES...\n"
@@ -145,22 +165,4 @@ cp $OUT_DIR/files_count $KERNEL_DIR/security/asl/files_count
 
 cp $OUT_DIR/permissions $KERNEL_DIR/security/asl/permissions
 #********COPY ASL FILES TO KERNEL SOURCES END***********************
-
-#********CLEAR TEMP FILES*******************************************
-echo -e "PREPARE KERNEL SOURCES FOR RE-BUILD WITH NEW ASL FILES...\n"
-
-rm $KERNEL_OUT/security/asl/*.o
-
-rm $KERNEL_OUT/arch/arm/boot/zImage
-
-rm $OUT_DIR/kernel
-
-rm $KERNEL_DIR/security/asl/list
-
-rm $KERNEL_DIR/security/asl/files_count
-
-rm $KERNEL_DIR/security/asl/asl_img_hash
-
-rm $KERNEL_DIR/security/asl/permissions
-#********CLEAR TEMP FILES END***************************************
 
