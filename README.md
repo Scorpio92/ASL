@@ -1,37 +1,64 @@
-# ASL
+WHAT IS IT?
+
 Android Security List - Simple Secure Boot Mechanism
 
-1.Edit config of your kernel, add CONFIG_ASL=y
+It control integrity of the SYSTEM partition with SHA-1 algorithm supports on early init and recover files if they was modified or deleted.
 
-CONFIG_ASL - enable Proc Interface in Kernel for ASL check in Ramdisk
+For recovery purpose uses asl.img file. It file contains all original files from SYSTEM partition with right permissions.
 
-CONFIG_ASL_DISABLED - not set it, if you want enable ASL
+If asl.img not found - device will be power off.
 
-2.Edit your Ramdisk. Find init.<hardware>.rc script and edit him. 
-Find "on fs" section and after all mount points, add "import init.asl.rc". 
-For example:
+After boot, you can see ASL Protocol in ASL Monitor app.
+********************************************************
 
-on fs
+HOW BUILD IT?
 
-    mount ext4 /dev/block/mmcblk0p2 /system rw wait
-    
-    mount ext4 /dev/block/mmcblk0p3 /data nosuid nodev noatime wait usedm discard,noauto_da_alloc,nodelalloc
-    
-    mount ext4 /dev/block/mmcblk0p4 /cache wait nosuid nodev noatime nomblk_io_submit
-    
-    import init.asl.rc
+You need in Android souces (any version Android OS, but better - CyanogenMod 10 and above) ans ASL source code.
 
+1. Download ASL sources: git clone https://github.com/Scorpio92/ASL.git -b "branch name"
 
-Add need files from /sbin dir. in your ramdisk (busybox and hims symlinks)
+2. Patch "build" directory from ASL downloaded dir. See commit №2. Dirs: external, system - not necessarily patch.
 
-3.Edit device.mk file in Android sources, add:
+3. Patch kernel sources. Prepare kernel_defconfig, include this:
 
-PRODUCT_COPY_FILES += \
+   CONFIG_ASL=y    
 
-device/.../.../ramdisk/init.asl.sh:root/init.asl.sh \
+   CONFIG_VT=y
 
-device/.../.../ramdisk/init.asl.rc:root/init.asl.rc
+4. Setup device folder, add string in product.mk line:
 
-4.Integrate ASL in Android sources. See commit №2.
+   $(call inherit-product-if-exists, $(LOCAL_PATH)/asl.mk)
+   
+5. Prepare init.rc for your OS version. Add in top of file:
 
-5.Build your favorite ROM from sources with ASL support it!
+   import /init.asl.rc
+   
+6. Add string in product.mk lines:
+   
+   PRODUCT_COPY_FILES += \
+
+          $(LOCAL_PATH)/asl/ramdisk/init.rc:root/init.rc
+
+6. Setup BoardConfig, add:
+
+   TARGET_PROVIDES_INIT_RC := true     
+
+   TARGET_KERNEL_SOURCE := kernel   
+
+   TARGET_KERNEL_CONFIG := kernel_defconfig
+
+7. make your ROM
+
+8. Flash ROM, copy asl.img to SD Card and (it will be better, to DATA partition). Power on your device, wait.
+
+ALSO YOU CAN BUILD KERNEL AND ASL.IMG MANUALLY:
+
+1) see AMB/run.sh for example and change VARS to YOUR.
+
+2) cd AMB
+
+3) su
+
+4) ./run.sh
+
+My device: Exynos4, CyanogenMod10, ~3900 files in SYSTEM partition. ASL checking + recover process take about 1 min 20 seconds.
