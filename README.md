@@ -19,7 +19,7 @@ You need in Android souces (any version Android OS, but better - CyanogenMod 10 
 
 2. Patch "build" directory from ASL downloaded dir. See commit №2. Dirs: external, system - not necessarily patch.
 
-3. Path kernel sources. Prepare kernel_defconfig, include this:
+3. Patch kernel sources. Prepare kernel_defconfig, include this:
 
    CONFIG_ASL=y    
 
@@ -36,7 +36,8 @@ You need in Android souces (any version Android OS, but better - CyanogenMod 10 
 6. Add string in product.mk lines:
    
    PRODUCT_COPY_FILES += \
-   $(LOCAL_PATH)/asl/ramdisk/init.rc:root/init.rc \
+
+          $(LOCAL_PATH)/asl/ramdisk/init.rc:root/init.rc
 
 6. Setup BoardConfig, add:
 
@@ -47,3 +48,17 @@ You need in Android souces (any version Android OS, but better - CyanogenMod 10 
    TARGET_KERNEL_CONFIG := kernel_defconfig
 
 7. make your ROM
+
+8. Flash ROM, copy asl.img to SD Card and (it will be better, to DATA partition). Power on your device, wait.
+
+ALSO YOU CAN BUILD KERNEL AND ASL.IMG MANUALLY:
+
+1) see AMB/run.sh for example and change VARS to YOUR.
+
+2) cd AMB
+
+3) su
+
+4) ./run.sh
+
+My device: Exynos4, CyanogenMod10, ~3900 files in SYSTEM partition. ASL checking + recover process take about 1 min 20 seconds.
