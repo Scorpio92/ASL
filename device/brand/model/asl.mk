@@ -15,5 +15,9 @@ PRODUCT_COPY_FILES += \
 # ASL sbin tools
 PRODUCT_COPY_FILES += \
 $(call find-copy-subdir-files,*,$(LOCAL_PATH)/asl/sbin,root/sbin)
+
+# ASL Monitor app
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/asl/asl_monitor.apk:system/app/asl_monitor.apk
  
 
