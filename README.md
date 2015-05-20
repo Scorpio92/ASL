@@ -47,9 +47,11 @@ You need in Android souces (any version Android OS, but better - CyanogenMod 10 
 
    TARGET_KERNEL_CONFIG := kernel_defconfig
 
-7. make your ROM
+7. Edit asl/ramdisk/sdcard.conf file. Add block for your EXTERNAL SD Card and FS type. Mount parameters not necessarily change.
 
-8. Flash ROM, copy asl.img to SD Card and (it will be better, to DATA partition). Power on your device, wait.
+8. make your ROM
+
+9. Flash ROM, copy asl.img to SD Card and (it will be better, to DATA partition). Power on your device, wait.
 
 ALSO YOU CAN BUILD KERNEL AND ASL.IMG MANUALLY:
 
