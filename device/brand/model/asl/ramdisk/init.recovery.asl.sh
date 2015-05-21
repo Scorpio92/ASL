@@ -1,23 +1,8 @@
 #!/sbin/sh
 
-#Create recovery archive from device with installed ROM
-#1) Create system image
-# dd if=/dev/block/mmcblk0p2 of=/mnt/sdcard/sysdd.img
-#Create recovery archive in compilation process
-# dd if=/dev/zero of=file.img bs=1M count=500
-# mkfs ext4 -F file.img
-# sudo mount -o loop,rw file.img 1
-# sudo cp -R system/* 1/
-# sudo umount 1
-#2) Mount img
-# losetup /dev/block/loop2 /mnt/sdcard/sysdd.img
-# mount -t ext4 /dev/block/loop2 /mnt/udisk
-# OR
-# mount -o loop=/dev/block/loop0 -t ext4 /mnt/sdcard/sysdd.img /mnt/udisk
-
 NEED_RECOVERY=$(cat /dev/asl/need_recovery)
 
-ASL_IMAGE="/data/asl.img"
+ASL_IMAGE="/data/asl/asl.img"
 
 SD_MOUNT_POINT="/tmpsd"
 
@@ -63,6 +48,8 @@ then
 
     FILE=$(echo $line | awk -F ", " '{print $4}')
 
+    echo -e "\nSet permissions for: "$FILE > $TERM
+
     chown $vUID:$vGUID $FILE
 
     chmod $MODE $FILE
@@ -82,6 +69,7 @@ then
 
     DIR=$(echo $line | awk -F ", " '{print $5}')
 
+    echo -e "\nSet permissions (recursive) for: "$DIR > $TERM
 
     echo -e "$(find $line -type d)" > /dev/asl/d
 
