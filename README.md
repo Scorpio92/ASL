@@ -49,7 +49,7 @@ You need in Android souces (any version Android OS, but better - CyanogenMod 10 
 
 7. Edit asl/ramdisk/sdcard.conf file. Add block for your EXTERNAL SD Card and FS type. Mount parameters not necessarily change.
 
-8. make your ROM
+8. make your ROM (from Superuser!!! It is very important! Enter "su" and after "make")
 
 9. Flash ROM, copy asl.img to SD Card and (it will be better, to DATA partition). Power on your device, wait.
 
