@@ -32,21 +32,6 @@ N="\\n"
 KOV='"'
 #********VARS END***************************************************
 
-#***************BUILD KERNEL****************************************
-echo -e "BUILD KERNEL WITH MODULES...\n"
-
-rm -r $KERNEL_OUT
-
-mkdir -p $KERNEL_OUT
-
-./kernel_build.sh $KERNEL_DIR $KERNEL_OUT $TARGET_ARCH $KERNEL_BIN_PATH $KERNEL_TYPE $KERNEL_CONFIG $COMPILER_PATH $OUT_DIR "0"
-
-rm $KERNEL_MODULES_PATH/*
-
-find $KERNEL_OUT -name "*.ko" -exec cp {} $KERNEL_MODULES_PATH \;
-
-#***************BUILD KERNEL END************************************
-
 #********CLEAR WORKSPACE********************************************
 echo -e "PREPARE TO CREATE ASL FILES...\n"
 
@@ -60,6 +45,10 @@ rm $OUT_DIR/permissions
 
 rm $OUT_DIR/asl.img
 
+rm $OUT_DIR/kernel
+
+rm -r $KERNEL_OUT
+
 touch $OUT_DIR/asl_list
 
 touch $OUT_DIR/asl_img_hash
@@ -67,7 +56,20 @@ touch $OUT_DIR/asl_img_hash
 touch $OUT_DIR/files_count
 
 touch $OUT_DIR/permissions
+
+mkdir -p $KERNEL_OUT
 #********CLEAR END**************************************************
+
+#***************BUILD KERNEL****************************************
+echo -e "BUILD KERNEL WITH MODULES...\n"
+
+./kernel_build.sh $KERNEL_DIR $KERNEL_OUT $TARGET_ARCH $KERNEL_BIN_PATH $KERNEL_TYPE $KERNEL_CONFIG $COMPILER_PATH $OUT_DIR "0"
+
+rm $KERNEL_MODULES_PATH/*
+
+find $KERNEL_OUT -name "*.ko" -exec cp {} $KERNEL_MODULES_PATH \;
+
+#***************BUILD KERNEL END************************************
 
 #********ASL_LIST***************************************************
 echo -e "CREATING ASL LIST...\n"
@@ -158,7 +160,21 @@ TEMP=$(find $SYSTEM_DIR -maxdepth 0 -type d -exec du -hsLl {} \;)
 
 SIZE=${TEMP:0:3}
 
-./make_ext4fs -l $SIZE"M" -a system $OUT_DIR/asl.img $SYSTEM_DIR
+#./make_ext4fs -l $SIZE"M" -a system $OUT_DIR/asl.img $SYSTEM_DIR
+
+dd if=/dev/zero of=$OUT_DIR/asl.img bs=1M count=$SIZE
+
+mkfs ext4 -F $OUT_DIR/asl.img
+
+mkdir $OUT_DIR/asl_img
+
+mount -o loop,rw $OUT_DIR/asl.img $OUT_DIR/asl_img
+
+cp -R $SYSTEM_DIR/* $OUT_DIR/asl_img/
+
+umount $OUT_DIR/asl_img
+
+rm -d $OUT_DIR/asl_img
 
 TEMP=$(echo "$(sha1sum $OUT_DIR/asl.img)" | awk -F " " '{print $1}')
 

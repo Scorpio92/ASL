@@ -127,7 +127,21 @@ TEMP=$(find $SYSTEM_DIR -maxdepth 0 -type d -exec du -hsLl {} \;)
 
 SIZE=${TEMP:0:3}
 
-./make_ext4fs -l $SIZE"M" -a system $OUT_DIR/asl.img $SYSTEM_DIR
+#./make_ext4fs -l $SIZE"M" -a system $OUT_DIR/asl.img $SYSTEM_DIR
+
+dd if=/dev/zero of=$OUT_DIR/asl.img bs=1M count=$SIZE
+
+mkfs ext4 -F $OUT_DIR/asl.img
+
+mkdir $OUT_DIR/asl_img
+
+mount -o loop,rw $OUT_DIR/asl.img $OUT_DIR/asl_img
+
+cp -R $SYSTEM_DIR/* $OUT_DIR/asl_img/
+
+umount $OUT_DIR/asl_img
+
+rm -d $OUT_DIR/asl_img
 
 TEMP=$(echo "$(sha1sum $OUT_DIR/asl.img)" | awk -F " " '{print $1}')
 

@@ -33,8 +33,6 @@ fi
 
 if [ $FINAL_KERNEL == "1" ]
 then
-rm $OUT_DIR/kernel
-
 cp $TARGET_PREBUILT_INT_KERNEL $OUT_DIR/kernel
 fi
 
