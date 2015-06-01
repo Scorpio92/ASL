@@ -179,7 +179,7 @@ if(!asl_dir){
     return -ENOMEM;
 }
 enabled_file = create_proc_read_entry("enabled", 0444, asl_dir, read_enabled_flag, NULL);
-files_count_file = create_proc_read_entry("files_count", 0400, asl_dir, read_files_count, NULL);
+files_count_file = create_proc_read_entry("files_count", 0444, asl_dir, read_files_count, NULL);
 asl_img_hash_file = create_proc_read_entry("asl_img_hash", 0444, asl_dir, read_asl_img_hash, NULL);
 //****************************************list and permissions start*****************************
 list_file = create_proc_entry("list", 0400, asl_dir);
