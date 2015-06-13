@@ -29,6 +29,8 @@ rm $OUT_DIR/permissions
 
 rm $OUT_DIR/asl.img
 
+rm $OUT_DIR/data/asl/asl.img
+
 touch $OUT_DIR/asl_list
 
 touch $OUT_DIR/asl_img_hash
