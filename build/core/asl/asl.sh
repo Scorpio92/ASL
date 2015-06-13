@@ -150,6 +150,11 @@ echo '"'$TEMP'"' > $OUT_DIR/asl_img_hash
 echo -e "ROOT HASH OF THE ASL.IMG IS : "$(cat $OUT_DIR/asl_img_hash)"\n"
 #********ASL.IMG BUILD END******************************************
 
+#********COPY ASL.IMG TO USERDATA***********************************
+mkdir -p $OUT_DIR/data/asl
+cp $OUT_DIR/asl.img $OUT_DIR/data/asl/asl.img
+#********COPY ASL.IMG TO USERDATA END*******************************
+
 #********CLEAR TEMP KERNEL FILES************************************
 echo -e "PREPARE KERNEL SOURCES FOR RE-BUILD WITH NEW ASL FILES...\n"
 

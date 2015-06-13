@@ -887,10 +887,14 @@ $(INSTALLED_SYSTEMIMAGE): $(BUILT_SYSTEMIMAGE) $(RECOVERY_FROM_BOOT_PATCH) | $(A
 	$(copy-file-to-target)
 	$(hide) $(call assert-max-image-size,$@ $(RECOVERY_FROM_BOOT_PATCH),$(BOARD_SYSTEMIMAGE_PARTITION_SIZE),yaffs)
 
-ASL_Tool := $(BUILD_SYSTEM)/asl/asl.sh
+ASL_TOOL := $(BUILD_SYSTEM)/asl/asl.sh
 
-systemimage: $(INSTALLED_SYSTEMIMAGE) $(INSTALLED_KERNEL_TARGET)
-	$(info $(shell $(ASL_Tool) $(PRODUCT_OUT) $(TARGET_KERNEL_SOURCE)))
+$(ASL_TOOL): $(INSTALLED_KERNEL_TARGET)
+	$(ASL_TOOL) $(PRODUCT_OUT) $(TARGET_KERNEL_SOURCE)
+
+systemimage: $(INSTALLED_SYSTEMIMAGE) $(ASL_TOOL)
+	${MAKE} bootimage
+	${MAKE} userdataimage
 
 .PHONY: systemimage-nodeps snod
 systemimage-nodeps snod: $(filter-out systemimage-nodeps snod,$(MAKECMDGOALS)) \
