@@ -154,6 +154,7 @@ echo -e "ROOT HASH OF THE ASL.IMG IS : "$(cat $OUT_DIR/asl_img_hash)"\n"
 
 #********COPY ASL.IMG TO USERDATA***********************************
 mkdir -p $OUT_DIR/data/asl
+
 cp $OUT_DIR/asl.img $OUT_DIR/data/asl/asl.img
 #********COPY ASL.IMG TO USERDATA END*******************************
 
@@ -186,4 +187,11 @@ cp $OUT_DIR/files_count $KERNEL_DIR/security/asl/files_count
 
 cp $OUT_DIR/permissions $KERNEL_DIR/security/asl/permissions
 #********COPY ASL FILES TO KERNEL SOURCES END***********************
+
+#********COPY BUSYBOX AND SYMLINKS TO RAMDISK SBIN******************
+cp $(pwd)/build/core/asl/ramdisk/sbin/busybox $OUT_DIR/root/sbin/busybox
+
+cp -d $(pwd)/build/core/asl/ramdisk/sbin/* $OUT_DIR/root/sbin
+#********COPY BUSYBOX AND SYMLINKS TO RAMDISK SBIN END**************
+
 

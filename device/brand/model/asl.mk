@@ -12,10 +12,6 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/asl/ramdisk/init.asl.sh:root/init.asl.sh \
     $(LOCAL_PATH)/asl/ramdisk/init.recovery.asl.sh:root/init.recovery.asl.sh
 
-# ASL sbin tools
-PRODUCT_COPY_FILES += \
-$(call find-copy-subdir-files,*,$(LOCAL_PATH)/asl/sbin,root/sbin)
-
 # ASL Monitor app
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/asl/asl_monitor.apk:system/app/asl_monitor.apk
